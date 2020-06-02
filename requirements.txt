@@ -1,0 +1,1 @@
+joulescope>=0.8.14  # also update JOULESCOPE_VERSION_MIN in setup.py

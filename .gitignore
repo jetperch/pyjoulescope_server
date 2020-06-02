@@ -1,0 +1,33 @@
+build
+build_installer
+dist
+**/__pycache__
+*.pyo
+*.pyc
+*.pyd
+*.egg-info
+.DS_Store
+
+joulescope_ui/.gitignore
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.elf
+*.objdump
+*.flash
+*.map
+
+# Editor swap/backup file garbage
+.*.swp
+.*.swo
+~*.docx
+~*.xlsx
+*.tmp
+
+.idea
+.settings
+
+src/pyqtgraph-0\.11\.0\.dev0/
+
+src/pip-delete-this-directory\.txt
