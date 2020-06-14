@@ -27,13 +27,24 @@ class Client:
         self._rsp_queue = asyncio.Queue()
         self._log = logging.getLogger(__name__)
 
+    def _on_streaming_data(self, data):
+        self._log.debug('streaming data')
+        t1, p1, data = framer.unpack(data)
+        if t1 != framer.TAG_AJS:
+            self._log.warning('streaming data does not start with AJS')
+            return
+        info = framer.ajs_receive(p1)
+        for field in info['data']['fields']:
+            t, p, data = framer.unpack(data)
+            # p contains the binary data for field
+            # current, voltage, power are float32
+
     async def receiver(self):
         while True:
             try:
                 tag, payload = await framer.receive(self._reader)
                 if tag == framer.TAG_ABN:
-                    self._log.info('streaming data')
-                    pass  # todo - handle streaming data
+                    self._on_streaming_data(payload)
                 elif tag == framer.TAG_AJS:
                     msg = framer.ajs_receive(payload)
                     phase = msg.get('phase')

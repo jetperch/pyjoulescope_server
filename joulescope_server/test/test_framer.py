@@ -43,3 +43,15 @@ class TestFramer(unittest.TestCase):
     def test_pack_with_pad(self):
         data = framer.pack(framer.TAG_ABN, b'hello')
         self.assertEqual(b'ABN\x00\x05\x00\x00\x00hello\x00\x00\x00', data)
+
+    def test_unpack_multiple(self):
+        d1 = framer.pack(framer.TAG_ABN, b'hello 1')
+        d2 = framer.pack(framer.TAG_ABN, b'hello there 2')
+        d = b''.join([d1, d2])
+        t1, p1, d = framer.unpack(d)
+        t2, p2, d = framer.unpack(d)
+        self.assertEqual(t1, framer.TAG_ABN)
+        self.assertEqual(t2, framer.TAG_ABN)
+        self.assertEqual(p1, b'hello 1')
+        self.assertEqual(p2, b'hello there 2')
+        self.assertEqual(0, len(d))

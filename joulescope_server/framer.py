@@ -68,6 +68,21 @@ def tpack(payload):
         return pack(TAG_ABN, payload)
 
 
+def unpack(data):
+    """Unpack one message.
+
+    :param data: The bytes data to unpack.
+    :return: (tag, payload, data_remaining).
+    """
+    tag, length = header_unpack(data)
+    pad = payload_length_to_pad_length(length)
+    total_length = HEADER_LENGTH + length + pad
+    if len(data) < total_length:
+        raise ValueError('insufficient data length')
+    payload = data[HEADER_LENGTH:(HEADER_LENGTH + length)]
+    return tag, payload, data[total_length:]
+
+
 async def receive(reader):
     header = await reader.readexactly(HEADER_LENGTH)
     tag, length = header_unpack(header)
