@@ -96,7 +96,7 @@ setuptools.setup(
 
     entry_points={
         'console_scripts': [
-            'joulescope_server=joulescope_server.main:run',
+            'joulescope_server=joulescope_server.__main__:run',
         ],
     },
     

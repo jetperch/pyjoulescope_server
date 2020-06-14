@@ -44,11 +44,11 @@ def get_parser():
 
 
 def run():
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(asctime)s:%(filename)s:%(lineno)d:%(name)s:%(message)s")
     p = get_parser()
     args = p.parse_args()
     return args.func(args)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(asctime)s:%(filename)s:%(lineno)d:%(name)s:%(message)s")
     run()

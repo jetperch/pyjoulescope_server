@@ -45,23 +45,33 @@ Each data structure has the following keys:
 
 The available req/rsp message types are:
 
-hello
-scan
-open
-close
-info
-parameters
-parameter_get
-parameter_set
-start
-stop
+* hello: rsp data contains version information.
+* scan: rsp data is the list of device names.
+* open
+* close
+* info: data contains device info metadata.
+* parameters: data contains dict of parameter name to metadata.
+* parameter_get: data contains
+  * 'name': the parameter name.
+  * 'value': on response, contains the parameter value.
+* parameter_set
+  * 'name': the parameter name.
+  * 'value': the new parameter value.
+* start: data contains
+    * fields: list containing any valid StreamBuffer.samples_get field
+        [current, voltage, power,
+         bits, current_range, current_lsb, voltage_lsb,
+         raw, raw_current, raw_voltage]
+    * sample_chunk: number of samples to send in each update.
+        Defaults to 1/10 of a second.
+* stop
 
 The async message types are:
 
-device_notify - Device inserted or removed, issue "scan" for details.
-statistics
-event
-stop
+* device_notify - Device inserted or removed, issue "scan" for details.
+* statistics
+* event
+* stop
 """
 
 
@@ -92,11 +102,65 @@ def _param_to_dict(p):
     }
 
 
+class DeviceStreamManager:
+
+    def __init__(self, parent, device_name, sample_chunk, fields):
+        self._parent = weakref.ref(parent)
+        self._device_name = device_name
+        self._sample_chunk = sample_chunk
+        self._fields = fields
+        self._sample_id_last = None
+        self._stream_buffer = None
+        self._log = logging.getLogger(__name__ + '.device_name')
+
+    def start(self, stream_buffer):
+        self._stream_buffer = stream_buffer
+        self._sample_id_last = stream_buffer.sample_id_range[-1]
+
+    def _update(self, force=False):
+        # called from USB thread, must resynchronize
+        if self._stream_buffer is None:
+            return
+        idx_start, idx_stop = self._stream_buffer.sample_id_range
+        if idx_stop <= self._sample_id_last:
+            return
+        if idx_start < self._sample_id_last:
+            idx_start = self._sample_id_last
+        if not force and (idx_start + self._sample_chunk) < idx_stop:
+            return
+        msg = {
+            'type': 'stream_data',
+            'phase': 'bin',
+            'device': self._device_name,
+            'data': {
+                'stream_buffer': self._stream_buffer,
+                'sample_range': [idx_start, idx_stop],
+                'fields': self._fields,
+            },
+        }
+        self._parent()._async_queue_put_threadsafe(msg)
+        self._sample_id_last = idx_stop
+
+    def stop(self):
+        self._update(True)
+        self._stream_buffer = None
+
+    def stream_notify(self, stream_buffer):
+        if stream_buffer != self._stream_buffer:
+            self._log.warning('stream buffer mismatch')
+            self._stream_buffer = stream_buffer
+        self._update()
+
+    def close(self):
+        pass
+
+
 class ClientManager:
     _instances = set()  # weakreaf to instances
 
     def __init__(self, reader, writer):
         self._devices = []
+        self._device_streaming = {}
         self._reader = reader
         self._writer = writer
         self._async_queue = asyncio.Queue()
@@ -144,6 +208,26 @@ class ClientManager:
     def _async_queue_put_threadsafe(self, msg):
         self._loop.call_soon_threadsafe(self._async_queue.put_nowait, msg)
 
+    async def _on_stream_data(self, msg):
+        device_name = msg['device']
+        if device_name not in self._device_streaming:
+            self._log.info('_on_stream_data, but device %s not streaming', device_name)
+            return
+        data = msg['data']
+        stream_buffer = data.pop('stream_buffer')
+        start, stop = data['sample_range']
+        d = stream_buffer.samples_get(start, stop, data['fields'])
+        msg['data']['time'] = d['time']
+        fields = []
+        for field in data['fields']:
+            k = d['signals'][field]
+            fields.append([field, k['units']])
+        payload = [framer.tpack(msg)]
+        for field in data['fields']:
+            v = d['signals'][field]['value']
+            payload.append(framer.tpack(v.tobytes()))
+        return b''.join(payload)
+
     async def _async_task(self):
         self._log.info('_async_task start')
         while True:
@@ -152,10 +236,14 @@ class ClientManager:
                 msg_type = msg['type']
                 if msg_type == 'close':
                     break
-                msg['phase'] = 'async'
-                msg['status'] = 200
-                msg['status_msg'] = 'Success'
-                self._writer.write(framer.tpack(msg))
+                elif msg_type == 'stream_data':
+                    msg = await self._on_stream_data(msg)
+                else:
+                    msg['phase'] = 'async'
+                    msg['status'] = 200
+                    msg['status_msg'] = 'Success'
+                if msg is not None:
+                    self._writer.write(framer.tpack(msg))
             except:
                 self._log.exception('_async_task')
         self._log.info('_async_task done')
@@ -209,12 +297,12 @@ class ClientManager:
 
     async def _on_parameter_get(self, msg):
         d = self.device_get(msg)
-        msg['data'] = d.parameter_get(msg['parameter'])
+        msg['data'] = d.parameter_get(msg['data']['name'])
         return msg
 
     async def _on_parameter_set(self, msg):
         d = self.device_get(msg)
-        d.parameter_get(msg['parameter'], msg['data'])
+        d.parameter_get(msg['data']['name'], msg['data']['value'])
         return msg
 
     async def _on_info(self, msg):
@@ -238,12 +326,20 @@ class ClientManager:
     async def _on_start(self, msg):
         d = self.device_get(msg)
         dname = str(d)
+        data = msg.get('data', {})
+        fields = data.get('fields', ['current', 'voltage'])
+        sample_chunk = data.get('sample_chunk', d.output_sampling_frequency / 10)
+        stream_process = DeviceStreamManager(self, dname, sample_chunk, fields)
+        self._device_streaming[dname] = stream_process
+        d.stream_process_register(stream_process)
         msg['data'] = d.start(lambda event, message: self._stop_fn(dname, event, message))
         return msg
 
     async def _on_stop(self, msg):
         d = self.device_get(msg)
         msg['data'] = d.stop()
+        stream_process = self._device_streaming.pop(str(d), None)
+        d.stream_process_unregister(stream_process)
         return msg
 
     async def _on_unknown(self, msg):

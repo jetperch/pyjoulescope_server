@@ -32,6 +32,7 @@ class Client:
             try:
                 tag, payload = await framer.receive(self._reader)
                 if tag == framer.TAG_ABN:
+                    self._log.info('streaming data')
                     pass  # todo - handle streaming data
                 elif tag == framer.TAG_AJS:
                     msg = framer.ajs_receive(payload)
@@ -84,11 +85,11 @@ async def client_test_01():
 
     rsp = await client.transact('open', device=device)
     rsp = await client.transact('parameters', device=device)
-    rsp = await client.transact('parameter_set', device=device, parameter='i_range', data='off')
-    rsp = await client.transact('parameter_get', device=device, parameter='i_range')
+    rsp = await client.transact('parameter_set', device=device, data={'name': 'i_range', 'value': 'off'})
+    rsp = await client.transact('parameter_get', device=device, data={'name': 'i_range'})
     rsp = await client.transact('info', device=device)
-    rsp = await client.transact('start', device=device)
-    await asyncio.sleep(3.0)
+    rsp = await client.transact('start', device=device, data={'fields': ['current', 'voltage']})
+    await asyncio.sleep(3.0)  # receive statistics and streaming data
     rsp = await client.transact('stop', device=device)
     rsp = await client.transact('close', device=device)
     print('Close the socket')

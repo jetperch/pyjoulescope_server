@@ -15,11 +15,15 @@ Install Python for your platform.  See the
 [installation instructions](https://joulescope.readthedocs.io/en/latest/user/install.html)
 for pyjoulescope for details.  Then:
 
-    pip3 install -U pyjoulescope_server
+    pip3 install -U joulescope_server
 
 You should then be able to run the server:
 
     joulescope_server
+    
+If you would prefer to run directly from the clone git repo:
+
+    python3 -m joulescope_server
 
 
 ## License

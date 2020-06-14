@@ -4,8 +4,9 @@
 This file contains the list of changes made to pyjoulescope_ui.
 
 
-## 0.1.0
+## 0.1.1
 
-2020 May 29 [in progress]
+2020 June 14
 
-*   Initial development
+*   Initial development, now with streaming data.
+

@@ -52,7 +52,7 @@ def header_unpack(header):
 
 def pack(tag, payload):
     if not isinstance(payload, bytes):
-        raise ValueError(f'invalid payload type {type(tag)}')
+        raise ValueError(f'invalid payload type {type(payload)}')
     header_pack(tag, len(payload))
     length = len(payload)
     length_bytes = struct.pack('<I', len(payload))
