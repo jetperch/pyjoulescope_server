@@ -15,6 +15,7 @@
 
 import asyncio
 from joulescope_server import framer, PORT
+import numpy as np
 import logging
 
 
@@ -37,7 +38,10 @@ class Client:
         for field in info['data']['fields']:
             t, p, data = framer.unpack(data)
             # p contains the binary data for field
-            # current, voltage, power are float32
+            if field in ['current', 'voltage', 'power']:
+                # p for current, voltage, power is float32
+                v = np.frombuffer(p, dtype=np.float32)
+                print(f'{field}: {len(v)}')
 
     async def receiver(self):
         while True:
@@ -96,9 +100,9 @@ async def client_test_01():
 
     rsp = await client.transact('open', device=device)
     rsp = await client.transact('parameters', device=device)
-    rsp = await client.transact('parameter_set', device=device, data={'name': 'i_range', 'value': 'off'})
-    rsp = await client.transact('parameter_get', device=device, data={'name': 'i_range'})
     rsp = await client.transact('info', device=device)
+    rsp = await client.transact('parameter_get', device=device, data={'name': 'i_range'})
+    rsp = await client.transact('parameter_set', device=device, data={'name': 'i_range', 'value': 'auto'})
     rsp = await client.transact('start', device=device, data={'fields': ['current', 'voltage']})
     await asyncio.sleep(3.0)  # receive statistics and streaming data
     rsp = await client.transact('stop', device=device)
