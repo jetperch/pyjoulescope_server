@@ -244,7 +244,7 @@ class ClientManager:
                     msg['status_msg'] = 'Success'
                 if msg is not None:
                     self._writer.write(framer.tpack(msg))
-            except:
+            except Exception:
                 self._log.exception('_async_task')
         self._log.info('_async_task done')
 
@@ -372,7 +372,7 @@ class ClientManager:
             except asyncio.IncompleteReadError:
                 self._log.info('Client closed socket')
                 break
-            except:
+            except Exception:
                 self._log.exception('handle_client error')
                 break
         await self._writer.drain()

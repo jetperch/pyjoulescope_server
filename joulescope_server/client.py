@@ -58,7 +58,7 @@ class Client:
                     self._log.warning('invalid phase %s', phase)
             except asyncio.IncompleteReadError:
                 break
-            except:
+            except Exception:
                 self._log.exception('handle_client error')
                 return
 
