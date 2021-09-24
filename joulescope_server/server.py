@@ -77,6 +77,7 @@ The async message types are:
 
 import asyncio
 from joulescope_server import framer, PORT, __version__
+import json
 import logging
 import joulescope
 from joulescope.usb import DeviceNotify
@@ -351,6 +352,8 @@ class ClientManager:
         while True:
             try:
                 msg = await framer.treceive(self._reader)
+                self._log.info(f'recv: {json.dumps(msg)}')
+                print()
                 phase = msg.get('phase', 'req')
                 if phase != 'req':
                     msg['error'] = f'Invalid phase: {phase}'
@@ -368,6 +371,7 @@ class ClientManager:
                     self._log.exception(f'fn type {type_}')
                     msg_status(msg, 500, 'Error')
                 if msg is not None:
+                    self._log.info(f'send: {json.dumps(msg)}')
                     self._writer.write(framer.tpack(msg))
             except asyncio.IncompleteReadError:
                 self._log.info('Client closed socket')
