@@ -303,7 +303,7 @@ class ClientManager:
 
     async def _on_parameter_set(self, msg):
         d = self.device_get(msg)
-        d.parameter_get(msg['data']['name'], msg['data']['value'])
+        d.parameter_set(msg['data']['name'], msg['data']['value'])
         return msg
 
     async def _on_info(self, msg):
