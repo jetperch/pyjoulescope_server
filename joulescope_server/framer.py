@@ -106,5 +106,4 @@ async def treceive(reader):
     elif tag == TAG_ABN:
         return payload
     else:
-        raise ValueError('unsupported tag')
-
+        raise ValueError('unsupported tag: tag=%s, payload=%s' % (tag, payload))

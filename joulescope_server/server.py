@@ -379,10 +379,16 @@ class ClientManager:
             except Exception:
                 self._log.exception('handle_client error')
                 break
-        await self._writer.drain()
-        self._writer.close()
-        await self._async_queue.put({'type': 'close'})
-        await self._async_task
+        try:
+            await self._writer.drain()
+            self._writer.close()
+        except Exception:
+            self._log.warning('Writer did not close gracefully')
+        try:
+            await self._async_queue.put({'type': 'close'})
+            await self._async_task
+        except Exception:
+            self._log.exception('Could not close client task gracefully')
         self._log.info('ClientManager.run done')
 
 
