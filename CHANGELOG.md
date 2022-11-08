@@ -3,6 +3,12 @@
 
 This file contains the list of changes made to pyjoulescope_ui.
 
+## 0.1.3
+
+20221 Nov 8
+
+* Improved error handling.
+
 
 ## 0.1.2
 
@@ -19,4 +25,3 @@ This file contains the list of changes made to pyjoulescope_ui.
 2020 June 14
 
 *   Initial development, now with streaming data.
-
