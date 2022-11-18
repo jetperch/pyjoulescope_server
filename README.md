@@ -5,9 +5,6 @@ Welcome to the pyjoulescope_server package!  This package enables Joulescopes
 and [pyjoulescope](https://github.com/jetperch/pyjoulescope) to communicate 
 over a network and interface with other programming languages using sockets.
 
-The Joulescope UI is under active development, and many features remain 
-outstanding. See the [future features document](features_future.md) for details.
-
 
 ## Quick start
 
@@ -25,8 +22,13 @@ If you would prefer to run directly from the clone git repo:
 
     python3 -m joulescope_server
 
+To demonstrate the server, you can run the example client from
+another terminal:
+
+    python3 -m joulescope_server client
+
 
 ## License
 
-All pyjoulescope_ui code is released under the permissive Apache 2.0 license.
+All pyjoulescope_server code is released under the permissive Apache 2.0 license.
 See the [License File](LICENSE.txt) for details.

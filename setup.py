@@ -30,7 +30,7 @@ import subprocess
 import shutil
 
 
-JOULESCOPE_VERSION_MIN = '0.8.14'  # also update requirements.txt
+JOULESCOPE_VERSION_MIN = '1.0.12'  # also update requirements.txt
 MYPATH = os.path.abspath(os.path.dirname(__file__))
 VERSION_PATH = os.path.join(MYPATH, 'joulescope_server', 'version.py')
 
@@ -60,7 +60,7 @@ setuptools.setup(
     #
     # For a list of valid classifiers, see https://pypi.org/classifiers/
     classifiers=[  # Optional
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
 
         # Indicate who your project is intended for
         'Intended Audience :: End Users/Desktop',
@@ -71,9 +71,12 @@ setuptools.setup(
         'License :: OSI Approved :: Apache Software License',
 
         # Supported Python versions
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
 
     keywords='joulescope server',
@@ -83,7 +86,7 @@ setuptools.setup(
     include_package_data=True,
     
     # See https://packaging.python.org/guides/distributing-packages-using-setuptools/#python-requires
-    python_requires='~=3.6',    
+    python_requires='~=3.8',
     
     # See https://packaging.python.org/en/latest/requirements.html
     install_requires=[

@@ -80,8 +80,7 @@ from joulescope_server import framer, PORT, __version__
 import json
 import logging
 import joulescope
-from joulescope.usb import DeviceNotify
-from joulescope.driver import Device
+from joulescope import DeviceNotify
 import weakref
 
 
@@ -189,7 +188,7 @@ class ClientManager:
         }
         self._async_queue_put_threadsafe(msg)
 
-    def device_get(self, msg) -> Device:
+    def device_get(self, msg):
         if 'device' not in msg:
             raise ValueError('device not specified')
         device = msg['device']
@@ -397,24 +396,24 @@ async def handle_client(reader, writer):
     await mgr.run()
 
 
-def run():
-    loop = asyncio.get_event_loop()
-    coro = asyncio.start_server(handle_client, '127.0.0.1', PORT, loop=loop)
-    server = loop.run_until_complete(coro)
-
-    # Serve requests until Ctrl+C is pressed
+async def run_async():
+    server = await asyncio.start_server(handle_client, '127.0.0.1', PORT)
     print('Serving on {}'.format(server.sockets[0].getsockname()))
+    await server.serve_forever()
+
+
+def run():
     device_notify = DeviceNotify(ClientManager.cls_handle_device_notify)
     try:
-        loop.run_forever()
+        asyncio.run(run_async())
     except KeyboardInterrupt:
         pass
+    for device in joulescope.scan():
+        try:
+            device.close()
+        except Exception:
+            pass
     device_notify.close()
-
-    # Close the server
-    server.close()
-    loop.run_until_complete(server.wait_closed())
-    loop.close()
 
 
 if __name__ == '__main__':

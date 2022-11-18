@@ -3,9 +3,19 @@
 
 This file contains the list of changes made to pyjoulescope_ui.
 
+
+## 0.1.4
+
+2022 Nov 11
+
+* Updated imports for joulescope 1.x.
+* Fixed asyncio usage for python 3.8+.
+* Updated README.
+
+
 ## 0.1.3
 
-20221 Nov 8
+2022 Nov 8
 
 * Improved error handling.
 

@@ -1,4 +1,4 @@
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 __title__ = "joulescope_server"
 __description__ = 'Joulescope™ server'
