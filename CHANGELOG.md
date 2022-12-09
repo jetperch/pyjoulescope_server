@@ -4,6 +4,14 @@
 This file contains the list of changes made to pyjoulescope_ui.
 
 
+## 0.1.5
+
+2022 Dec 9
+
+* Unregister statistics callback on device close #4.
+* Stopped streaming and statistics on socket close.
+
+
 ## 0.1.4
 
 2022 Nov 11

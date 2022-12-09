@@ -160,7 +160,8 @@ class ClientManager:
 
     def __init__(self, reader, writer):
         self._devices = []
-        self._device_streaming = {}
+        self._device_streaming = {}  # Map(device_name: str, DeviceStreamManager)
+        self._statistics_fn_by_device = {}  # Map(device_name: str, callable)
         self._reader = reader
         self._writer = writer
         self._async_queue = asyncio.Queue()
@@ -188,14 +189,16 @@ class ClientManager:
         }
         self._async_queue_put_threadsafe(msg)
 
+    def device_get_by_name(self, device_name):
+        for d in self._devices:
+            if str(d) == device_name:
+                return d
+        raise ValueError('device not found')
+
     def device_get(self, msg):
         if 'device' not in msg:
             raise ValueError('device not specified')
-        device = msg['device']
-        for d in self._devices:
-            if str(d) == device:
-                return d
-        raise ValueError('device not found')
+        return self.device_get_by_name(msg['device'])
 
     async def _on_hello(self, msg):
         msg['data'] = {
@@ -246,6 +249,20 @@ class ClientManager:
                     self._writer.write(framer.tpack(msg))
             except Exception:
                 self._log.exception('_async_task')
+
+        # Stop streaming
+        while len(self._device_streaming):
+            device_name, stream_process = self._device_streaming.popitem()
+            d = self.device_get_by_name(device_name)
+            d.stop()
+            d.stream_process_unregister(stream_process)
+
+        # Stop statistics
+        while len(self._statistics_fn_by_device):
+            device_name, statistics_fn = self._statistics_fn_by_device.popitem()
+            d = self.device_get_by_name(device_name)
+            d.statistics_callback_unregister(statistics_fn)
+
         self._log.info('_async_task done')
 
     async def _on_scan(self, msg):
@@ -280,12 +297,21 @@ class ClientManager:
     async def _on_open(self, msg):
         d = self.device_get(msg)
         dname = str(d)
-        d.statistics_callback = lambda data: self._statistics_fn(dname, data)
+        statistics_fn = lambda data: self._statistics_fn(dname, data)
+        self._statistics_fn_by_device[dname] = statistics_fn
+        d.statistics_callback_register(statistics_fn)
         d.open(lambda event, message: self._event_fn(dname, event, message))
         return msg
 
+    def _statistics_unregister(self, device):
+        dname = str(device)
+        statistics_fn = self._statistics_fn_by_device.pop(dname, None)
+        if statistics_fn is not None:
+            device.statistics_callback_unregister(statistics_fn)
+
     async def _on_close(self, msg):
         d = self.device_get(msg)
+        self._statistics_unregister(d)
         d.close()
         return msg
 

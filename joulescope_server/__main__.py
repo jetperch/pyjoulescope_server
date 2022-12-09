@@ -28,7 +28,7 @@ def _run_client(p):
 
 
 def get_parser():
-    """Run the ."""
+    """Run the Joulescope socket server or client."""
     parser = argparse.ArgumentParser(description='Joulescope socket server and client')
     parser.set_defaults(func=_run_server)
 
